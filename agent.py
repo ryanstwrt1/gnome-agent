@@ -29,6 +29,7 @@ import io
 import pandas as pd
 import matplotlib
 import csv
+import os
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -221,7 +222,7 @@ class GnomeAgentAgent(PrometheusAgent):
             list_of_tuples.append((caption,  df))
         return list_of_tuples
 
-    def send_to_deeplynx(self, context, event_queue, message, list_of_tuples):
+    def send_to_deeplynx(self, context, event_queue, message, list_of_tuples, base_path='./'):
         """
         Take the dictionary of captions and csvs and send this to DeepLynx
         Args:
@@ -237,13 +238,15 @@ class GnomeAgentAgent(PrometheusAgent):
         results = []
         for caption, df in list_of_tuples:
             rows = df.values.tolist()
+            file_path = os.path.join(base_path, f'table_{tab_num}.csv')
 
             # Create a DeepLynx artifact which contains the
-            table_id = self.send_json_artifact(
+            table_id = self.send_deeplynx_artifact(
                 context,
                 event_queue,
-                {"caption": caption, "columns": df.columns, "rows": rows},
-                name=f"table {tab_num}",
+                name=f'Table {tab_num}',
+                file_path=file_path,
+                description=f'Table file for Table{tab_num}',
                 catalog_artifact=True,
             )
             results.append(table_id)
