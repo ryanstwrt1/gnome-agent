@@ -124,14 +124,32 @@ class GnomeAgentAgent(PrometheusAgent):
         # ------------------------------------------------------------------
         # 3. Do your actual work here.  Replace this with real logic.
         # ------------------------------------------------------------------
-        if input_data['skill_id'] == 'markdown_to_csv':
-            markdown_text = await read_in_markdown(path_or_markdown=params.get('path_or_markdown'))
-            list_of_tuples = markdown_to_csv(markdown_text=markdown_text)
-            return await send_to_deeplynx(context=context,
+        skill_id = str(params.get("skill_id")).strip()
+        artifact_id = str(params.get("artifact_id")).strip()
+
+        if not artifact_id:
+            ...
+
+        artifacts = (params.get("artifacts") if isinstance(params.get("artifacts"), list) else None)
+
+        path = self.get_artifact_file_path(artifact_id, context=context, artifacts=artifacts)
+
+        source_ref = self.resolve_artifact_reference(self._context_conversation_id(context), artifact_id)
+        if not source_ref:
+            return {
+                "status": "error",
+                "conversation_id": self._context_conversation_id(context),
+                "message": f"Artifact '{artifact_id}' was not found in this conversation.",
+            }
+        print(path)
+        if skill_id == 'markdown_to_csv':
+            markdown_text = await self.read_in_markdown(path_or_markdown=path)
+            list_of_tuples = await self.markdown_to_csv(markdown_text=markdown_text)
+            return await self.send_to_deeplynx(context=context,
                                           event_queue=event_queue,
                                           message="Reading in markdown to create csv",
                                           dict_of_csv=list_of_tuples)
-        if input_data['skill_id'] == 'plot_csv':
+        if skill_id == 'plot_csv':
             return await ...
         return {"status": "Error", "error": "unknown skill"}
 
